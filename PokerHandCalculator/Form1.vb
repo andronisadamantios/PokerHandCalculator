@@ -19,7 +19,7 @@ Public Class Form1
 
         ' Add any initialization after the InitializeComponent() call.
         Me._cvs = Me.FlowLayoutPanel1.Controls.OfType(Of CardViewer).OrderBy(Function(p) p.Name).ToArray
-        Me._handDetector = PlayingCardEntities.Poker.HandDetector3.HandDetector3.SINGLE_INSTANCE
+        Me._handDetector = PlayingCardEntities.Poker.HandDetector.SINGLE_INSTANCE
         Me._deck = New Deck
         Me._cards = New List(Of Card)(7)
     End Sub
