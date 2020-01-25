@@ -56,8 +56,6 @@
     <Import Include="System.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Calc.vb" />
-    <Compile Include="Deck.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -65,7 +63,6 @@
       <DependentUpon>Form1.vb</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Hand.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -106,9 +103,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\PermutationsCombinations\PermutationsCombinations\PermutationsCombinations.vbproj">
-      <Project>{693BB15E-3363-496A-B6D1-77E8D067F806}</Project>
-      <Name>PermutationsCombinations</Name>
+    <ProjectReference Include="..\..\PlayingCardControls\PlayingCardControls\PlayingCardControls.vbproj">
+      <Project>{57F3B2E1-4D89-4FA7-AD54-DDFC859E992F}</Project>
+      <Name>PlayingCardControls</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\PlayingCardEntities\PlayingCardEntities\PlayingCardEntities.vbproj">
       <Project>{FAE179F6-996C-4E9A-9461-D226B812A927}</Project>
