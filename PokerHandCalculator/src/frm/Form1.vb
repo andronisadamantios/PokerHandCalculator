@@ -7,10 +7,6 @@ Imports DamisLib
 
 Public Class Form1
 
-    Private ReadOnly imageBackground_FELT As Image
-
-    Public showBackGroundImage As Boolean
-
     Private ReadOnly _handDetector As PlayingCardEntities.Poker.IHandDetector
     Private _deck As Deck
 
@@ -23,8 +19,6 @@ Public Class Form1
 
         Me.KeyPreview = True
         ' store the image extracted from the resources of the form to a variable
-        Me.imageBackground_FELT = Me.BackgroundImage
-        Me.showBackGroundImage = True
 
         ' Add any initialization after the InitializeComponent() call.
         Me._deck = New Deck(True)
@@ -34,11 +28,9 @@ Public Class Form1
 
     End Sub
 
-
     Private Sub Cards_ListChanged(ByVal o As Object, ByVal e As EventArgs) Handles cvm.CardListChanged
         Me.btnCalculate.Enabled = Me.cvm.Cards.Length >= 5
     End Sub
-
 
 
     Private Function draw7cards() As Card()
@@ -52,58 +44,14 @@ Public Class Form1
             Return
         End If
 
-        Me.suspendAllLayout()
-
-        Me.resetUI()
-        Dim cards = Me.draw7cards
-        Me.cvm.Cards = cards
-
-        Me.resumeAllLayout()
-    End Sub
-
-    Private Sub resetUI()
-        Me.lblBestHand.Text = ""
         For Each lmnt In Me.cvm.CardViewers
-            'lmnt.BorderStyle = BorderStyle.None
+            lmnt.BorderStyle = BorderStyle.FixedSingle
             lmnt.Size = New Size(128, 160)
         Next
+        Me.cvm.Cards = Me.draw7cards
     End Sub
 
-    ''' <summary>
-    ''' performance is very slow in windows forms with responsive layout and background image
-    ''' </summary>
-    ''' <remarks></remarks>
-    Private Sub suspendAllLayout()
-        Me.BackgroundImage = Nothing
-        'Me.SuspendLayout()
-        'Me.pnlButtons.SuspendLayout()
-        'Me.tlpMain.SuspendLayout()
-        'Me.cvm.SuspendLayout()
-        'For Each lmnt In Me.flpCards.Controls.Cast(Of Control)()
-        '    lmnt.SuspendLayout()
-        'Next
-    End Sub
-
-    ''' <summary>
-    ''' performance is very slow in windows forms with responsive layout and background image
-    ''' </summary>
-    ''' <remarks></remarks>
-    Private Sub resumeAllLayout()
-        'For Each lmnt In Me.flpCards.Controls.Cast(Of Control)()
-        '    lmnt.ResumeLayout(True)
-        'Next
-        'Me.cvm.ResumeLayout(True)
-        'Me.tlpMain.ResumeLayout(True)
-        'Me.pnlButtons.ResumeLayout(True)
-        'Me.ResumeLayout(True)
-        Me.BackgroundImage = If(Me.showBackGroundImage, imageBackground_FELT, Nothing)
-    End Sub
-
-    Private Sub btnDraw7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnDraw7.Click
-        Me.draw7()
-    End Sub
-
-    Private Sub btnCalcualte_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCalculate.Click
+    Private Sub findBestHand()
         Dim cards As Card() = Me.cvm.Cards
         If cards.Length < 5 Then
             Return
@@ -111,53 +59,26 @@ Public Class Form1
 
         Dim bestHand = Me._handDetector.FindBestHand(cards)
 
-        Me.suspendAllLayout()
         ' find the card viewers (that contain the cards that where selected by the hand detector as the winning hand) and highlight them
         For Each lmnt In Me.cvm.CardViewers.Where(Function(cv) bestHand.Cards.Any(Function(c) c.Equals(cv.Card)))
             lmnt.BorderStyle = BorderStyle.FixedSingle
             lmnt.Size = New Size(160, 200)
         Next
-        Me.resumeAllLayout()
 
         Dim str = bestHand.Type.ToString
         Me.lblBestHand.Text = str
         MessageBox.Show(String.Format("Best Hand: {0}", str), "Result", MessageBoxButtons.OK)
     End Sub
 
-    Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnRunTillRoyalFlush.Click
+    Private Sub toggleRunTillRoyalFlush()
         If Me.bgw.IsBusy Then
             Me.bgw.CancelAsync()
+            'Me.btnRunTillRoyalFlush.Text = "Run Till Royal Flush"
         Else
             Me.bgw.RunWorkerAsync()
+            'Me.btnRunTillRoyalFlush.Text = "Stop"
         End If
     End Sub
-
-    Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
-        If Me.bgw.IsBusy Then
-            Me.bgw.CancelAsync()
-        End If
-    End Sub
-
-
-    Private Sub Form1_ResizeBegin(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.ResizeBegin
-        Me.suspendAllLayout()
-    End Sub
-
-    Private Sub Form1_ResizeEnd(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.ResizeEnd
-        Me.resumeAllLayout()
-    End Sub
-
-    Private Sub LinkLabel1_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs) Handles LinkLabel1.LinkClicked
-        Me.showBackGroundImage = False
-        Me.BackgroundImage = Nothing
-    End Sub
-
-    Private Sub LinkLabel2_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs) Handles LinkLabel2.LinkClicked
-        Me.showBackGroundImage = True
-        Me.BackgroundImage = imageBackground_FELT
-    End Sub
-
-
     Private Sub bgw_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles bgw.DoWork
         Dim hand As IHand = Nothing
         Dim cards As Card()
@@ -179,7 +100,6 @@ Public Class Form1
             Me.bgw.ReportProgress(1, t)
         End If
     End Sub
-
     Private Sub bgw_ProgressChanged(ByVal sender As System.Object, ByVal e As System.ComponentModel.ProgressChangedEventArgs) Handles bgw.ProgressChanged
 
         Dim t = CType(e.UserState, Tuple(Of Card(), IHand))
@@ -189,7 +109,6 @@ Public Class Form1
         Me.cvm.Cards = cards
         Me.lblBestHand.Text = hand.Type.ToString
     End Sub
-
     Private Sub bgw_RunWorkerCompleted(ByVal sender As System.Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles bgw.RunWorkerCompleted
         If e.Cancelled Then
 
@@ -199,4 +118,79 @@ Public Class Form1
             MessageBox.Show("Royal Flush found.", "Finished", MessageBoxButtons.OK)
         End If
     End Sub
+
+
+
+
+    Private Sub btnDraw7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnDraw7.Click
+        Me.draw7()
+    End Sub
+    Private Sub btnFindBestHand_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCalculate.Click
+        Me.findBestHand()
+    End Sub
+    Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
+        Me.toggleRunTillRoyalFlush()
+    End Sub
+
+    Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
+        If Me.bgw.IsBusy Then
+            Me.bgw.CancelAsync()
+        End If
+    End Sub
+
+
+
+#Region "performance is very slow in windows forms with responsive layout and background image"
+    'Private ReadOnly imageBackground_FELT As Image
+    'Public showBackGroundImage As Boolean
+
+    ' when form starts
+    'Me.imageBackground_FELT = Me.BackgroundImage
+    'Me.showBackGroundImage = True
+    ' end when form starts
+
+    'Private Sub LinkLabel1_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs)
+    '    Me.showBackGroundImage = False
+    '    Me.BackgroundImage = Nothing
+    'End Sub
+
+    'Private Sub LinkLabel2_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs)
+    '    Me.showBackGroundImage = True
+    '    Me.BackgroundImage = imageBackground_FELT
+    'End Sub
+
+    'Private Sub Form1_ResizeBegin(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.ResizeBegin
+    '    Me.suspendAllLayout()
+    'End Sub
+
+    'Private Sub Form1_ResizeEnd(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles MyBase.ResizeEnd
+    '    Me.resumeAllLayout()
+    'End Sub
+
+    'Private Sub suspendAllLayout()
+    '    Me.SuspendDrawing()
+    '    Me.SuspendLayout()
+    '    Me.BackgroundImage = Nothing
+    '    Me.pnlButtons.SuspendLayout()
+    '    Me.cvm.SuspendLayout()
+    '    For Each lmnt In Me.cvm.Controls.Cast(Of Control)()
+    '        lmnt.SuspendLayout()
+    '    Next
+
+    'End Sub
+
+    'Private Sub resumeAllLayout()
+    '    For Each lmnt In Me.cvm.Controls.Cast(Of Control)()
+    '        lmnt.ResumeLayout(True)
+    '    Next
+    '    Me.cvm.ResumeLayout(True)
+    '    Me.pnlButtons.ResumeLayout(True)
+    '    Me.BackgroundImage = If(Me.showBackGroundImage, imageBackground_FELT, Nothing)
+    '    Me.ResumeLayout(True)
+    '    Me.ResumeDrawing(True)
+    'End Sub
+#End Region
+
+
+
 End Class
