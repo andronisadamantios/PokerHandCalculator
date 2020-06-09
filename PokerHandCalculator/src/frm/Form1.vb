@@ -54,7 +54,9 @@ Public Class Form1
     Private Sub findBestHand()
         Dim cards As Card() = Me.cvm.Cards
         If cards.Length < 5 Then
-            Return
+            Throw New ArgumentException("There have to be least 5 cards.")
+        ElseIf cards.Distinct.Count <> cards.Count Then
+            Throw New ArgumentException("Duplicate cards not allowed. All cards must be unique.")
         End If
 
         Dim bestHand = Me._handDetector.FindBestHand(cards)
@@ -126,7 +128,11 @@ Public Class Form1
         Me.draw7()
     End Sub
     Private Sub btnFindBestHand_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCalculate.Click
-        Me.findBestHand()
+        Try
+            Me.findBestHand()
+        Catch ex As ArgumentException
+            MessageBox.Show(ex.Message, "Cannot find best hand", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1)
+        End Try
     End Sub
     Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
         Me.toggleRunTillRoyalFlush()
