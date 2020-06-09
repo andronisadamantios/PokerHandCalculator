@@ -122,8 +122,6 @@ Public Class Form1
     End Sub
 
 
-
-
     Private Sub btnDraw7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnDraw7.Click
         Me.draw7()
     End Sub
@@ -137,6 +135,50 @@ Public Class Form1
     Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
         Me.toggleRunTillRoyalFlush()
     End Sub
+
+    Private Sub Form1_KeyDown(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Me.KeyDown
+        If Me.cvm.SelectedCardViewers.Count <> 1 Then
+            Return
+        End If
+        Dim cc As CardChooser = Me.cvm.CardChooser
+        Select Case e.KeyData
+            Case Keys.S
+                cc.SelectedSuit = Suit.Spades
+            Case Keys.C
+                cc.SelectedSuit = Suit.Clubs
+            Case Keys.H
+                cc.SelectedSuit = Suit.Hearts
+            Case Keys.D
+                cc.SelectedSuit = Suit.Diamonds
+            Case Keys.A
+                cc.SelectedKind = Kind.Ace
+            Case Keys.K
+                cc.SelectedKind = Kind.King
+            Case Keys.Q
+                cc.SelectedKind = Kind.Queen
+            Case Keys.J
+                cc.SelectedKind = Kind.Jack
+            Case Keys.T, Keys.D0, Keys.NumPad0
+                cc.SelectedKind = Kind.Ten
+            Case Keys.D2, Keys.NumPad2
+                cc.SelectedKind = Kind.Two
+            Case Keys.D3, Keys.NumPad3
+                cc.SelectedKind = Kind.Three
+            Case Keys.D4, Keys.NumPad4
+                cc.SelectedKind = Kind.Four
+            Case Keys.D5, Keys.NumPad5
+                cc.SelectedKind = Kind.Five
+            Case Keys.D6, Keys.NumPad6
+                cc.SelectedKind = Kind.Six
+            Case Keys.D7, Keys.NumPad7
+                cc.SelectedKind = Kind.Seven
+            Case Keys.D8, Keys.NumPad8
+                cc.SelectedKind = Kind.Eight
+            Case Keys.D9, Keys.NumPad9
+                cc.SelectedKind = Kind.Nine
+        End Select
+    End Sub
+
 
     Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
         If Me.bgw.IsBusy Then
@@ -196,7 +238,5 @@ Public Class Form1
     '    Me.ResumeDrawing(True)
     'End Sub
 #End Region
-
-
 
 End Class

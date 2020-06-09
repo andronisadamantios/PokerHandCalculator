@@ -129,6 +129,7 @@ Partial Class Form1
         Me.Controls.Add(Me.tlpMain)
         Me.Controls.Add(Me.pnlButtons)
         Me.Font = New System.Drawing.Font("Microsoft Sans Serif", 10.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CType(0, Byte))
+        Me.KeyPreview = True
         Me.Name = "Form1"
         Me.ShowIcon = False
         Me.Text = "Poker Hand Calculator"
