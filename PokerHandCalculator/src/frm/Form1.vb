@@ -3,14 +3,10 @@ Imports PlayingCardEntities.Common
 Imports PlayingCardControls
 Imports PlayingCardEntities.Poker
 Imports DamisLib
+Imports DamisLib.FormsX
 
 
 Public Class Form1
-
-    Private ReadOnly _handDetector As PlayingCardEntities.Poker.IHandDetector
-    Private _deck As Deck
-
-
 
     Public Sub New()
 
@@ -18,37 +14,35 @@ Public Class Form1
         InitializeComponent()
 
         Me.KeyPreview = True
-        ' store the image extracted from the resources of the form to a variable
 
         ' Add any initialization after the InitializeComponent() call.
-        Me._deck = New Deck(True)
-        Me._handDetector = PlayingCardEntities.Poker.HandDetectors.DEFAULT
-
         Me.cvm.Reset(7)
+        Me.resetSizesCardViewers()
 
     End Sub
 
     Private Sub Cards_ListChanged(ByVal o As Object, ByVal e As EventArgs) Handles cvm.CardListChanged
         Me.btnCalculate.Enabled = Me.cvm.Cards.Length >= 5
+        Me.btnClear.Enabled = Me.cvm.Cards.Length > 0
+        Me.resetSizesCardViewers()
     End Sub
 
-
-    Private Function draw7cards() As Card()
-        Me._deck.Reset(True)
-        Return DamisLib.EnumerableInfinite(Of Card).Get(AddressOf Me._deck.Draw).Take(7).ToArray
-    End Function
-
-    Private Sub draw7()
-        If Me.InvokeRequired Then
-            Me.Invoke(New System.Action(AddressOf Me.draw7))
-            Return
-        End If
-
+    Private Sub resetSizesCardViewers()
         For Each lmnt In Me.cvm.CardViewers
             lmnt.BorderStyle = BorderStyle.FixedSingle
-            lmnt.Size = New Size(128, 160)
+            lmnt.Size = New Size(100, 125)
         Next
-        Me.cvm.Cards = Me.draw7cards
+    End Sub
+
+    Private Sub clear()
+        Me.resetSizesCardViewers()
+        Me.cvm.Clear()
+        Me.lblBestHand.Text = String.Empty
+    End Sub
+
+    Private Sub draw7()
+        Me.clear()
+        Me.cvm.Cards = Deck.GetRandomCards(7)
     End Sub
 
     Private Sub findBestHand()
@@ -59,12 +53,12 @@ Public Class Form1
             Throw New ArgumentException("Duplicate cards not allowed. All cards must be unique.")
         End If
 
-        Dim bestHand = Me._handDetector.FindBestHand(cards)
+        Dim bestHand = HandDetectors.DEFAULT.FindBestHand(cards)
 
         ' find the card viewers (that contain the cards that where selected by the hand detector as the winning hand) and highlight them
         For Each lmnt In Me.cvm.CardViewers.Where(Function(cv) bestHand.Cards.Any(Function(c) c.Equals(cv.Card)))
             lmnt.BorderStyle = BorderStyle.FixedSingle
-            lmnt.Size = New Size(160, 200)
+            lmnt.Size = New Size(120, 150)
         Next
 
         Dim str = bestHand.Type.ToString
@@ -72,59 +66,11 @@ Public Class Form1
         MessageBox.Show(String.Format("Best Hand: {0}", str), "Result", MessageBoxButtons.OK)
     End Sub
 
-    Private Sub toggleRunTillRoyalFlush()
-        If Me.bgw.IsBusy Then
-            Me.bgw.CancelAsync()
-            'Me.btnRunTillRoyalFlush.Text = "Run Till Royal Flush"
-        Else
-            Me.bgw.RunWorkerAsync()
-            'Me.btnRunTillRoyalFlush.Text = "Stop"
-        End If
-    End Sub
-    Private Sub bgw_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles bgw.DoWork
-        Dim hand As IHand = Nothing
-        Dim cards As Card()
-        Dim t As Tuple(Of Card(), IHand)
-        Dim i As Integer = 0
-        Do
-            cards = Me.draw7cards
-            hand = Me._handDetector.FindBestHand(cards)
-            i += 1
-            If i Mod 100 = 0 Then
-                t = New Tuple(Of Card(), IHand)(cards, hand)
-                Me.bgw.ReportProgress(-1, t)
-            End If
-        Loop While Not Me.bgw.CancellationPending AndAlso hand.Type.Value <> IHandType.HandTypeValue.RoyalFlush
-        If Me.bgw.CancellationPending Then
-            e.Cancel = True
-        Else
-            t = New Tuple(Of Card(), IHand)(cards, hand)
-            Me.bgw.ReportProgress(1, t)
-        End If
-    End Sub
-    Private Sub bgw_ProgressChanged(ByVal sender As System.Object, ByVal e As System.ComponentModel.ProgressChangedEventArgs) Handles bgw.ProgressChanged
-
-        Dim t = CType(e.UserState, Tuple(Of Card(), IHand))
-        Dim cards = t.Item1
-        Dim hand = t.Item2
-
-        Me.cvm.Cards = cards
-        Me.lblBestHand.Text = hand.Type.ToString
-    End Sub
-    Private Sub bgw_RunWorkerCompleted(ByVal sender As System.Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles bgw.RunWorkerCompleted
-        If e.Cancelled Then
-
-        ElseIf e.Error IsNot Nothing Then
-            MessageBox.Show(e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        Else
-            MessageBox.Show("Royal Flush found.", "Finished", MessageBoxButtons.OK)
-        End If
-    End Sub
-
 
     Private Sub btnDraw7_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnDraw7.Click
         Me.draw7()
     End Sub
+
     Private Sub btnFindBestHand_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCalculate.Click
         Try
             Me.findBestHand()
@@ -132,9 +78,11 @@ Public Class Form1
             MessageBox.Show(ex.Message, "Cannot find best hand", MessageBoxButtons.OK, MessageBoxIcon.Exclamation, MessageBoxDefaultButton.Button1)
         End Try
     End Sub
-    Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
-        Me.toggleRunTillRoyalFlush()
+
+    Private Sub btnClear_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnClear.Click
+        Me.clear()
     End Sub
+
 
     Private Sub Form1_KeyDown(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Me.KeyDown
         If Me.cvm.SelectedCardViewers.Count <> 1 Then
@@ -180,13 +128,64 @@ Public Class Form1
     End Sub
 
 
-    Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
-        If Me.bgw.IsBusy Then
-            Me.bgw.CancelAsync()
-        End If
-    End Sub
+#Region "run till royal flush"
+    'Private Sub toggleRunTillRoyalFlush()
+    '    If Me.bgw.IsBusy Then
+    '        Me.bgw.CancelAsync()
+    '        'Me.btnRunTillRoyalFlush.Text = "Run Till Royal Flush"
+    '    Else
+    '        Me.bgw.RunWorkerAsync()
+    '        'Me.btnRunTillRoyalFlush.Text = "Stop"
+    '    End If
+    'End Sub
+    'Private Sub bgw_DoWork(ByVal sender As System.Object, ByVal e As System.ComponentModel.DoWorkEventArgs) Handles bgw.DoWork
+    '    Dim hand As IHand = Nothing
+    '    Dim cards As Card()
+    '    Dim t As Tuple(Of Card(), IHand)
+    '    Dim i As Integer = 0
+    '    Do
+    '        cards = Me.draw7cards
+    '        hand = Me._handDetector.FindBestHand(cards)
+    '        i += 1
+    '        If i Mod 100 = 0 Then
+    '            t = New Tuple(Of Card(), IHand)(cards, hand)
+    '            Me.bgw.ReportProgress(-1, t)
+    '        End If
+    '    Loop While Not Me.bgw.CancellationPending AndAlso hand.Type.Value <> IHandType.HandTypeValue.RoyalFlush
+    '    If Me.bgw.CancellationPending Then
+    '        e.Cancel = True
+    '    Else
+    '        t = New Tuple(Of Card(), IHand)(cards, hand)
+    '        Me.bgw.ReportProgress(1, t)
+    '    End If
+    'End Sub
+    'Private Sub bgw_ProgressChanged(ByVal sender As System.Object, ByVal e As System.ComponentModel.ProgressChangedEventArgs) Handles bgw.ProgressChanged
 
+    '    Dim t = CType(e.UserState, Tuple(Of Card(), IHand))
+    '    Dim cards = t.Item1
+    '    Dim hand = t.Item2
 
+    '    Me.cvm.Cards = cards
+    '    Me.lblBestHand.Text = hand.Type.ToString
+    'End Sub
+    'Private Sub bgw_RunWorkerCompleted(ByVal sender As System.Object, ByVal e As System.ComponentModel.RunWorkerCompletedEventArgs) Handles bgw.RunWorkerCompleted
+    '    If e.Cancelled Then
+
+    '    ElseIf e.Error IsNot Nothing Then
+    '        MessageBox.Show(e.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error)
+    '    Else
+    '        MessageBox.Show("Royal Flush found.", "Finished", MessageBoxButtons.OK)
+    '    End If
+    'End Sub
+    'Private Sub btnRunTillRoyalFlush_Click(ByVal sender As System.Object, ByVal e As System.EventArgs)
+    '    Me.toggleRunTillRoyalFlush()
+    'End Sub
+    'Private Sub Form1_FormClosing(ByVal sender As Object, ByVal e As System.Windows.Forms.FormClosingEventArgs) Handles Me.FormClosing
+    '    If Me.bgw.IsBusy Then
+    '        Me.bgw.CancelAsync()
+    '    End If
+    'End Sub
+#End Region
 
 #Region "performance is very slow in windows forms with responsive layout and background image"
     'Private ReadOnly imageBackground_FELT As Image
