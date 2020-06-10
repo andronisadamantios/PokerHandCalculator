@@ -8,17 +8,33 @@ Imports DamisLib.FormsX
 
 Public Class Form1
 
+    Public showBackGroundImage As Boolean = True
+    Public showLayoutPerformanceTip As Boolean = True
+
+
     Public Sub New()
 
         ' This call is required by the designer.
         InitializeComponent()
 
         Me.KeyPreview = True
+        Me.BackgroundImage = If(Me.showBackGroundImage, My.Resources.felt1, Nothing)
+        Me.pnlTop.Visible = Me.showLayoutPerformanceTip
 
         ' Add any initialization after the InitializeComponent() call.
+        Me.suspendAllLayout()
         Me.cvm.Reset(7)
         Me.resetSizesCardViewers()
+        Me.resumeAllLayout()
 
+    End Sub
+
+    Private Sub suspendAllLayout()
+        Me.BackgroundImage = Nothing
+    End Sub
+
+    Private Sub resumeAllLayout()
+        Me.BackgroundImage = If(Me.showBackGroundImage, My.Resources.felt1, Nothing)
     End Sub
 
     Private Sub Cards_ListChanged(ByVal o As Object, ByVal e As EventArgs) Handles cvm.CardListChanged
@@ -28,10 +44,12 @@ Public Class Form1
     End Sub
 
     Private Sub resetSizesCardViewers()
+        Me.suspendAllLayout()
         For Each lmnt In Me.cvm.CardViewers
             lmnt.BorderStyle = BorderStyle.FixedSingle
             lmnt.Size = New Size(100, 125)
         Next
+        Me.resumeAllLayout()
     End Sub
 
     Private Sub clear()
@@ -56,10 +74,12 @@ Public Class Form1
         Dim bestHand = HandDetectors.DEFAULT.FindBestHand(cards)
 
         ' find the card viewers (that contain the cards that where selected by the hand detector as the winning hand) and highlight them
+        Me.suspendAllLayout()
         For Each lmnt In Me.cvm.CardViewers.Where(Function(cv) bestHand.Cards.Any(Function(c) c.Equals(cv.Card)))
             lmnt.BorderStyle = BorderStyle.FixedSingle
             lmnt.Size = New Size(120, 150)
         Next
+        Me.resumeAllLayout()
 
         Dim str = bestHand.Type.ToString
         Me.lblBestHand.Text = str
@@ -83,6 +103,17 @@ Public Class Form1
         Me.clear()
     End Sub
 
+    Private Sub llRemoveBackGroundImage_LinkClicked(ByVal sender As System.Object, ByVal e As System.Windows.Forms.LinkLabelLinkClickedEventArgs) Handles llRemoveBackGroundImage.LinkClicked
+        If Me.showBackGroundImage Then
+            Me.showBackGroundImage = False
+            Me.BackgroundImage = Nothing
+            Me.llRemoveBackGroundImage.Text = "Restore BackGround Image"
+        Else
+            Me.showBackGroundImage = True
+            Me.BackgroundImage = My.Resources.felt1
+            Me.llRemoveBackGroundImage.Text = "Remove BackGround Image"
+        End If
+    End Sub
 
     Private Sub Form1_KeyDown(ByVal sender As Object, ByVal e As System.Windows.Forms.KeyEventArgs) Handles Me.KeyDown
         If Me.cvm.SelectedCardViewers.Count <> 1 Then
@@ -238,4 +269,9 @@ Public Class Form1
     'End Sub
 #End Region
 
+    Private Sub btnCloseInfo_Click(ByVal sender As System.Object, ByVal e As System.EventArgs) Handles btnCloseTip.Click
+        Me.lblInfo.Visible = False
+        Me.btnCloseTip.Visible = False
+        Me.pnlTop.BackColor = Color.Transparent
+    End Sub
 End Class
